@@ -29,7 +29,7 @@ impl MarketMaker {
 
             last_price = ticker.last_price;
 
-            tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         }
     }
 }
