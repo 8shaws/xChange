@@ -14,11 +14,17 @@ where
 pub struct Ticker {
     #[serde(rename = "lastPrice", deserialize_with = "string_to_f64")]
     pub last_price: f64,
+    pub symbol: String,
 }
 
 pub struct ApiClient {
     client: Client,
     base_url: String,
+}
+
+pub enum OrderSide {
+    BUY,
+    SELL,
 }
 
 impl ApiClient {
@@ -33,5 +39,15 @@ impl ApiClient {
         let url = format!("{}/ticker?symbol={}", self.base_url, symbol);
         let resp = self.client.get(&url).send().await?.json::<Ticker>().await?;
         Ok(resp)
+    }
+
+    pub async fn place_order(
+        &self,
+        symbol: &str,
+        side: OrderSide,
+        position_size: f64,
+        price: f64,
+    ) -> Result<(), reqwest::Error> {
+        Ok(())
     }
 }
