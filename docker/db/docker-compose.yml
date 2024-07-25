@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15.0-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: main
+    networks:
+      - app-network
+    container_name: postgres
+    volumes:
+      - data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    restart: always
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: pg_isready --username=user --dbname=main --quiet
+      interval: 15s
+      timeout: 5s
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  data:
