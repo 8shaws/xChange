@@ -16,5 +16,7 @@ serde = { version = "1.0", features = ["derive"] }
 diesel = { version = "2.2.0", features = ["postgres", "chrono", "r2d2", "uuid"] }
 dotenvy = "0.15"
 actix-rt = "2.10.0"
-chrono = "0.4.38"
-uuid = { version = "1.10.0" }
+chrono = { version = "0.4.19", features = ["serde"] }
+uuid = { version = "1.10.0", features = ["v4", "serde"] }
+futures = "0.3.30"
+r2d2 = "0.8.10"
