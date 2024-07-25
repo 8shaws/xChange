@@ -1,4 +1,6 @@
-use actix_web::{web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{middleware, web, App, HttpResponse, HttpServer, Responder};
+use db::initialize_db_pool;
+use dotenvy::dotenv;
 use env_logger::Builder;
 use lazy_static::lazy_static;
 use num_cpus;
@@ -10,7 +12,6 @@ mod models;
 mod route;
 mod schema;
 
-use crate::db::establish_connection;
 use crate::route::user::user_config;
 
 lazy_static! {
@@ -30,18 +31,22 @@ async fn root() -> impl Responder {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
+
     let thread_count = num_cpus::get() - 6;
 
     Builder::from_default_env()
         .filter_level(log::LevelFilter::Info)
         .init();
 
-    let _con = &mut establish_connection();
+    let pool = initialize_db_pool();
 
     println!("{:?}: Api Server is running on port: {}", *START_TIME, 8080);
 
-    HttpServer::new(|| {
+    HttpServer::new(move || {
         App::new()
+            .app_data(web::Data::new(pool.clone()))
+            .wrap(middleware::Logger::default())
             .configure(user_config)
             .route("/", web::get().to(root))
             .route("/_health", web::get().to(root))
