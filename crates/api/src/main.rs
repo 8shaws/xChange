@@ -6,6 +6,7 @@ use serde_json::json;
 use std::time::SystemTime;
 
 mod db;
+mod models;
 mod route;
 mod schema;
 
@@ -35,7 +36,7 @@ async fn main() -> std::io::Result<()> {
         .filter_level(log::LevelFilter::Info)
         .init();
 
-    let _connection = &mut establish_connection();
+    let _con = &mut establish_connection();
 
     println!("{:?}: Api Server is running on port: {}", *START_TIME, 8080);
 

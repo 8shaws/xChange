@@ -4,6 +4,8 @@ use diesel::prelude::*;
 use dotenvy::dotenv;
 use std::env;
 
+pub mod user_db_fn;
+
 pub fn establish_connection() -> PgConnection {
     dotenv().ok();
 
