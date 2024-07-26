@@ -2,6 +2,7 @@ use super::utils::verify_token;
 use actix_service::Service;
 use actix_web::{
     body::EitherBody,
+    cookie::{time::Duration, CookieBuilder},
     dev::{ServiceRequest, ServiceResponse, Transform},
     http::header,
     Error, HttpMessage, HttpResponse,
@@ -93,7 +94,22 @@ where
                         req.extensions_mut().insert(jwt.clone());
 
                         let res = srv.call(req).await?;
-                        Ok(res.map_into_left_body())
+
+                        //set the cookie
+                        let cookie = CookieBuilder::new("jwt", jwt.clone())
+                            .http_only(true)
+                            .path("/")
+                            .secure(false)
+                            .max_age(Duration::days(7))
+                            .finish();
+
+                        let mut res = res.map_into_left_body();
+                        res.response_mut().headers_mut().append(
+                            header::SET_COOKIE,
+                            header::HeaderValue::from_str(&cookie.to_string()).unwrap(),
+                        );
+
+                        Ok(res)
                     }
                     Err(_) => {
                         let response = HttpResponse::Forbidden().json(json!({
