@@ -7,6 +7,7 @@ use num_cpus;
 use serde_json::json;
 use std::time::SystemTime;
 
+mod auth;
 mod db;
 mod models;
 mod route;
