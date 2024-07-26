@@ -1,6 +1,8 @@
 use actix_web::{error, get, post, web, HttpResponse, Responder, Result};
 use serde_json::json;
 
+use crate::auth;
+use crate::auth::middleware::ExtractClientId;
 use crate::db::{self, DbPool};
 use crate::models;
 
@@ -21,12 +23,31 @@ async fn register(
     .await?
     .map_err(error::ErrorInternalServerError)?;
 
+    let token = match auth::utils::generate_token(&created_user.id.to_string()) {
+        Ok(t) => t,
+        Err(_) => return Err(error::ErrorInternalServerError("Error generating token")),
+    };
+
     Ok(HttpResponse::Created().json(json!({
         "status": "ok",
-        "user": created_user
+        "user": created_user,
+        "jwt": token
     })))
 }
 
+async fn get_orders() -> impl Responder {
+    HttpResponse::Ok().body("Orders")
+}
+
 pub fn user_config(cfg: &mut web::ServiceConfig) {
-    cfg.service(web::scope("/user").service(login).service(register));
+    cfg.service(
+        web::scope("/user")
+            .service(login)
+            .service(register)
+            .service(
+                web::resource("/orders")
+                    .wrap(ExtractClientId)
+                    .route(web::get().to(get_orders)),
+            ),
+    );
 }
