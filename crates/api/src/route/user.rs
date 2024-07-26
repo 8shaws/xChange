@@ -1,20 +1,63 @@
-use actix_web::{error, get, post, web, HttpResponse, Responder, Result};
+use actix_web::{error, post, web, HttpResponse, Responder, Result};
 use serde_json::json;
 
 use crate::auth;
 use crate::auth::middleware::ExtractClientId;
 use crate::db::{self, DbPool};
-use crate::models;
+use crate::models::*;
 
-#[get("/login")]
-async fn login() -> &'static str {
-    "Login"
+#[post("/login")]
+async fn login(pool: web::Data<DbPool>, form: web::Json<LoginUser>) -> Result<impl Responder> {
+    let form = form.into_inner();
+    let user = web::block(move || {
+        let mut con = pool.get()?;
+
+        let db_user = if form.login_field.contains("@") {
+            db::user_db_fn::get_user_by_email(&mut con, &form.login_field)
+        } else {
+            db::user_db_fn::get_user_by_contact(&mut con, &form.login_field)
+        };
+        db_user
+    })
+    .await?
+    .map_err(error::ErrorInternalServerError)?;
+
+    Ok(match user {
+        Some(user) => {
+            // Check if password is correct
+            if auth::utils::verify_password(&form.password, &user[0].hash_password) {
+                let token = match auth::utils::generate_token(&user[0].id.to_string()) {
+                    Ok(t) => t,
+                    Err(_) => {
+                        return Err(error::ErrorInternalServerError("Error generating token"))
+                    }
+                };
+
+                HttpResponse::Ok().json(json!({
+                    "status": "ok",
+                    "jwt": token,
+                    "message": "Login successful"
+                }))
+            } else {
+                HttpResponse::Unauthorized().json(json!({
+                    "status": "error",
+                    "message": "Invalid password"
+                }))
+            }
+        }
+
+        // User was not found; return 404 response with error message
+        None => HttpResponse::NotFound().json(json!({
+            "status": "error",
+            "message": "User with field not found"
+        })),
+    })
 }
 
 #[post("/register")]
 async fn register(
     pool: web::Data<DbPool>,
-    form: web::Json<models::RegisterUser>,
+    form: web::Json<RegisterUser>,
 ) -> Result<impl Responder> {
     let created_user = web::block(move || {
         let mut conn = pool.get()?;
