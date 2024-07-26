@@ -61,6 +61,13 @@ where
             if let Ok(auth_str) = auth_header.to_str() {
                 if auth_str.starts_with("Bearer ") {
                     jwt = auth_str[7..].to_string();
+                } else {
+                    let response = HttpResponse::Forbidden().json(json!({
+                        "msg": "Invalid authorization header, make sure to use the Bearer scheme",
+                        "status": "Error"
+                    }));
+                    let service_response = req.into_response(response.map_into_right_body());
+                    return Box::pin(async { Ok(service_response) });
                 }
             }
         }
