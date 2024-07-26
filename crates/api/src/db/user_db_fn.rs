@@ -1,18 +1,12 @@
+extern crate diesel;
+
+use crate::auth;
 use crate::models::{self, User};
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use uuid;
 
 use super::DbError;
-
-pub fn _get_all_users(con: &mut PgConnection) -> Vec<User> {
-    use crate::schema::users::dsl::*;
-
-    let result = users.load::<User>(con).expect("Error loading users");
-    println!("Displaying {} users", result.len());
-
-    result
-}
 
 // inserts new user to db based on RegisterUser struct
 pub fn insert_user(
@@ -21,10 +15,12 @@ pub fn insert_user(
 ) -> Result<models::User, DbError> {
     use crate::schema::users::dsl::*;
 
+    let hash = auth::utils::hash_password(&user.password);
+
     let new_user = models::User {
         id: uuid::Uuid::new_v4(),
         username: user.username,
-        password: user.password,
+        hash_password: hash.0,
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
@@ -33,8 +29,36 @@ pub fn insert_user(
         updated_at: chrono::Local::now().naive_local(),
     };
 
-    diesel::insert_into(users)
-        .values(&new_user)
-        .get_result(con)
-        .map_err(Into::into)
+    diesel::insert_into(users).values(&new_user).execute(con)?;
+    Ok(new_user)
+}
+
+pub fn get_user_by_email(
+    con: &mut PgConnection,
+    form_email: &str,
+) -> Result<Option<Vec<models::User>>, DbError> {
+    use crate::schema::users::dsl::*;
+
+    let user = users
+        .filter(email.eq(form_email))
+        .select(User::as_select())
+        .load::<User>(con)
+        .optional()?;
+
+    Ok(user)
+}
+
+pub fn get_user_by_contact(
+    con: &mut PgConnection,
+    contact: &str,
+) -> Result<Option<Vec<models::User>>, DbError> {
+    use crate::schema::users::dsl::*;
+
+    let user = users
+        .filter(contact_number.eq(contact))
+        .select(User::as_select())
+        .load::<User>(con)
+        .optional()?;
+
+    Ok(user)
 }
