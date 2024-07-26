@@ -6,8 +6,6 @@ diesel::table! {
         #[max_length = 255]
         username -> Varchar,
         #[max_length = 255]
-        password -> Varchar,
-        #[max_length = 255]
         first_name -> Varchar,
         #[max_length = 255]
         last_name -> Varchar,
@@ -17,5 +15,7 @@ diesel::table! {
         contact_number -> Varchar,
         created_at -> Timestamp,
         updated_at -> Timestamp,
+        #[max_length = 255]
+        hash_password -> Varchar,
     }
 }

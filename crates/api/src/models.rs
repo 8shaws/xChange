@@ -1,17 +1,17 @@
 use chrono::NaiveDateTime;
-use diesel::prelude::*;
+use diesel::{prelude::*, query_builder::QueryId};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::schema::users;
 
-#[derive(Queryable, Selectable, Insertable, Serialize)]
+#[derive(Queryable, Insertable, Serialize, QueryId, Debug, Selectable, Deserialize)]
 #[diesel(table_name = users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct User {
     pub id: Uuid,
     pub username: String,
-    pub password: String,
+    pub hash_password: String,
     pub first_name: String,
     pub last_name: String,
     pub email: String,
@@ -28,4 +28,16 @@ pub struct RegisterUser {
     pub password: String,
     pub email: String,
     pub contact_number: String,
+}
+
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub enum LoginField {
+//     Email(String),
+//     ContactNumber(String),
+// }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LoginUser {
+    pub login_field: String,
+    pub password: String,
 }
