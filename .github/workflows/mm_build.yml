@@ -1,0 +1,31 @@
+name: Deploy xchange_mm
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "crates/market_maker/**"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "crates/market_maker/**"
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - run: "mv docker/mm/Dockerfile ."
+
+      - name: docker login
+        env:
+          DOCKER_USER: ${{secrets.DOCKERHUB_USERNAME}}
+          DOCKER_PASSWORD: ${{secrets.DOCKERHUB_TOKEN}}
+        run: |
+          docker login -u $DOCKER_USER -p $DOCKER_PASSWORD
+      - name: Build the Docker image
+        run: docker build . --tag shawakash/xchange_mm:${{ github.sha }}
+
+      - name: Docker Push
+        run: docker push shawakash/xchange_mm:${{ github.sha }}
