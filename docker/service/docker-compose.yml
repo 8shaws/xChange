@@ -21,6 +21,15 @@ services:
       interval: 15s
       timeout: 5s
 
+  redis:
+    image: redis:latest
+    container_name: redis
+    networks:
+      - app-network
+    restart: always
+    ports:
+      - 6379:6379
+
 networks:
   app-network:
     driver: bridge
