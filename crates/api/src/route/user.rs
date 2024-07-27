@@ -3,14 +3,14 @@ use serde_json::json;
 
 use crate::auth;
 use crate::auth::middleware::ExtractClientId;
-use crate::db::{self, DbPool};
+use crate::db::{self};
 use crate::models::*;
 
 #[post("/login")]
-async fn login(pool: web::Data<DbPool>, form: web::Json<LoginUser>) -> Result<impl Responder> {
+async fn login(state: web::Data<AppState>, form: web::Json<LoginUser>) -> Result<impl Responder> {
     let form = form.into_inner();
     let user = web::block(move || {
-        let mut con = pool.get()?;
+        let mut con = state.db_pool.get()?;
 
         let db_user = if form.login_field.contains("@") {
             db::user_db_fn::get_user_by_email(&mut con, &form.login_field)
@@ -25,8 +25,8 @@ async fn login(pool: web::Data<DbPool>, form: web::Json<LoginUser>) -> Result<im
     Ok(match user {
         Some(user) => {
             // Check if password is correct
-            if auth::utils::verify_password(&form.password, &user[0].hash_password) {
-                let token = match auth::utils::generate_token(&user[0].id.to_string()) {
+            if auth::utils::verify_password(&form.password, &user.hash_password) {
+                let token = match auth::utils::generate_token(&user.id.to_string()) {
                     Ok(t) => t,
                     Err(_) => {
                         return Err(error::ErrorInternalServerError("Error generating token"))
@@ -56,11 +56,11 @@ async fn login(pool: web::Data<DbPool>, form: web::Json<LoginUser>) -> Result<im
 
 #[post("/register")]
 async fn register(
-    pool: web::Data<DbPool>,
+    state: web::Data<AppState>,
     form: web::Json<RegisterUser>,
 ) -> Result<impl Responder> {
     let created_user = web::block(move || {
-        let mut conn = pool.get()?;
+        let mut conn = state.db_pool.get()?;
         db::user_db_fn::insert_user(&mut conn, form.into_inner())
     })
     .await?

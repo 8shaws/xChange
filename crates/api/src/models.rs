@@ -1,4 +1,5 @@
 use chrono::NaiveDateTime;
+use deadpool_redis::Pool as RedisPool;
 use diesel::{prelude::*, query_builder::QueryId};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -40,4 +41,10 @@ pub struct RegisterUser {
 pub struct LoginUser {
     pub login_field: String,
     pub password: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct AppState {
+    pub db_pool: crate::db::DbPool,
+    pub redis_pool: RedisPool,
 }
