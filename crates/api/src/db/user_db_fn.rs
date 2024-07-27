@@ -36,29 +36,29 @@ pub fn insert_user(
 pub fn get_user_by_email(
     con: &mut PgConnection,
     form_email: &str,
-) -> Result<Option<Vec<models::User>>, DbError> {
+) -> Result<Option<models::User>, DbError> {
     use crate::schema::users::dsl::*;
 
-    let user = users
+    let user_result = users
         .filter(email.eq(form_email))
         .select(User::as_select())
-        .load::<User>(con)
+        .get_result::<User>(con)
         .optional()?;
 
-    Ok(user)
+    Ok(user_result)
 }
 
 pub fn get_user_by_contact(
     con: &mut PgConnection,
     contact: &str,
-) -> Result<Option<Vec<models::User>>, DbError> {
+) -> Result<Option<models::User>, DbError> {
     use crate::schema::users::dsl::*;
 
-    let user = users
+    let user_result = users
         .filter(contact_number.eq(contact))
         .select(User::as_select())
-        .load::<User>(con)
+        .get_result::<User>(con)
         .optional()?;
 
-    Ok(user)
+    Ok(user_result)
 }

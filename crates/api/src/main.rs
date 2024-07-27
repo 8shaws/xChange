@@ -10,6 +10,7 @@ use std::time::SystemTime;
 mod auth;
 mod db;
 mod models;
+mod redis;
 mod route;
 mod schema;
 
@@ -40,13 +41,19 @@ async fn main() -> std::io::Result<()> {
         .filter_level(log::LevelFilter::Info)
         .init();
 
-    let pool = initialize_db_pool();
+    let dp_pool = initialize_db_pool();
+    let redis_pool = redis::initialize_redis_pool();
+
+    let app_state = models::AppState {
+        db_pool: dp_pool,
+        redis_pool: redis_pool,
+    };
 
     println!("{:?}: Api Server is running on port: {}", *START_TIME, 8080);
 
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(pool.clone()))
+            .app_data(web::Data::new(app_state.clone()))
             .wrap(middleware::Logger::default())
             .configure(user_config)
             .route("/", web::get().to(root))
