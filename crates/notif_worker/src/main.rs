@@ -17,14 +17,17 @@ async fn main() {
         .parse::<usize>()
         .expect("NO_WORKER_THREADS must be a positive integer");
 
+    let queues = vec!["user_email_verify"];
+
     let pool = Arc::new(initialize_redis_pool());
 
     let mut worker_handlers = vec![];
 
     for _ in 0..no_worker_threads {
         let pool_clone = Arc::clone(&pool);
+        let queues_clone = queues.clone();
         let worker_handle = tokio::spawn(async move {
-            handle_process(pool_clone).await;
+            handle_process(pool_clone, queues_clone).await;
         });
         worker_handlers.push(worker_handle);
     }
