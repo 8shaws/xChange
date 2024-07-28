@@ -1,3 +1,4 @@
+extern crate r2d2;
 use actix_web::{middleware, web, App, HttpResponse, HttpServer, Responder};
 use db::initialize_db_pool;
 use dotenvy::dotenv;
