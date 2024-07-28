@@ -17,5 +17,6 @@ diesel::table! {
         updated_at -> Timestamp,
         #[max_length = 255]
         hash_password -> Varchar,
+        email_verified -> Nullable<Bool>,
     }
 }

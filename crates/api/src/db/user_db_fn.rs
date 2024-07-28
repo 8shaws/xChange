@@ -24,6 +24,7 @@ pub fn insert_user(
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
+        email_verified: Some(false),
         contact_number: user.contact_number,
         created_at: chrono::Local::now().naive_local(),
         updated_at: chrono::Local::now().naive_local(),
