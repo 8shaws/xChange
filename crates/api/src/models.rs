@@ -1,12 +1,12 @@
+use crate::redis::RedisPool;
 use chrono::NaiveDateTime;
-use deadpool_redis::Pool as RedisPool;
 use diesel::{prelude::*, query_builder::QueryId};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::schema::users;
 
-#[derive(Queryable, Insertable, Serialize, QueryId, Debug, Selectable, Deserialize)]
+#[derive(Queryable, Insertable, Serialize, QueryId, Debug, Selectable, Deserialize, Clone)]
 #[diesel(table_name = users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct User {
@@ -17,6 +17,7 @@ pub struct User {
     pub last_name: String,
     pub email: String,
     pub contact_number: String,
+    pub email_verified: Option<bool>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }

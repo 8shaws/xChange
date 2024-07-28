@@ -1,10 +1,10 @@
-use actix_web::{error, post, web, HttpResponse, Responder, Result};
-use serde_json::json;
-
 use crate::auth;
 use crate::auth::middleware::ExtractClientId;
 use crate::db::{self};
 use crate::models::*;
+use actix_web::{error, post, web, HttpResponse, Responder, Result};
+use r2d2_redis::redis;
+use serde_json::json;
 
 #[post("/login")]
 async fn login(state: web::Data<AppState>, form: web::Json<LoginUser>) -> Result<impl Responder> {
@@ -59,6 +59,8 @@ async fn register(
     state: web::Data<AppState>,
     form: web::Json<RegisterUser>,
 ) -> Result<impl Responder> {
+    let redis_pool = state.redis_pool.clone();
+
     let created_user = web::block(move || {
         let mut conn = state.db_pool.get()?;
         db::user_db_fn::insert_user(&mut conn, form.into_inner())
@@ -71,11 +73,33 @@ async fn register(
         Err(_) => return Err(error::ErrorInternalServerError("Error generating token")),
     };
 
-    Ok(HttpResponse::Created().json(json!({
-        "status": "ok",
-        "user": created_user,
-        "jwt": token
-    })))
+    let mail = created_user.email.clone();
+    let result = web::block(move || {
+        let mut conn = redis_pool.get().map_err(|e| e.to_string())?;
+        let _: () = redis::cmd("LPUSH")
+            .arg("user_email_verify")
+            .arg(mail)
+            .query(&mut *conn)
+            .map_err(|e| e.to_string())?;
+        Ok::<(), String>(())
+    })
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;
+
+    match result {
+        Ok(_) => Ok(HttpResponse::Created().json(json!({
+            "status": "ok",
+            "user": created_user,
+            "jwt": token,
+            "mail_status": "ok"
+        }))),
+        Err(err) => Ok(HttpResponse::Created().json(json!({
+            "status": "ok",
+            "user": created_user,
+            "jwt": token,
+            "mail_status": err
+        }))),
+    }
 }
 
 async fn get_orders() -> impl Responder {
