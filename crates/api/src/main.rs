@@ -14,6 +14,7 @@ mod models;
 mod redis;
 mod route;
 mod schema;
+mod types;
 
 use crate::route::user::user_config;
 

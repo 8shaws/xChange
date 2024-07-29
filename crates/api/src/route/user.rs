@@ -1,10 +1,12 @@
 use crate::auth;
-use crate::auth::middleware::ExtractClientId;
+use crate::auth::middleware::{ExtractClientId, IdKey, JwtKey};
 use crate::db::{self};
 use crate::models::*;
-use actix_web::{error, post, web, HttpResponse, Responder, Result};
+use crate::types::{EmailVerifyData, VerifyEmailBody};
+use actix_web::{error, post, web, HttpMessage, HttpRequest, HttpResponse, Responder, Result};
 use r2d2_redis::redis;
 use serde_json::json;
+use std::sync::Arc;
 
 #[post("/login")]
 async fn login(state: web::Data<AppState>, form: web::Json<LoginUser>) -> Result<impl Responder> {
@@ -74,11 +76,17 @@ async fn register(
     };
 
     let mail = created_user.email.clone();
+    let id = created_user.id.clone().to_string();
     let result = web::block(move || {
         let mut conn = redis_pool.get().map_err(|e| e.to_string())?;
+
+        let data = EmailVerifyData { id: id, mail: mail };
+
+        let json_data = serde_json::to_string(&data).unwrap();
+
         let _: () = redis::cmd("LPUSH")
             .arg("user_email_verify")
-            .arg(mail)
+            .arg(json_data)
             .query(&mut *conn)
             .map_err(|e| e.to_string())?;
         Ok::<(), String>(())
@@ -106,6 +114,69 @@ async fn get_orders() -> impl Responder {
     HttpResponse::Ok().body("Orders")
 }
 
+async fn verify_email(
+    state: web::Data<AppState>,
+    req: HttpRequest,
+    form: web::Json<VerifyEmailBody>,
+) -> Result<impl Responder> {
+    let id = req.extensions().get::<IdKey>().cloned();
+
+    match id {
+        Some(id) => {
+            let redis_pool = state.redis_pool.clone();
+            let id_clone = id.clone();
+
+            let otp_result = web::block(move || {
+                let mut conn = redis_pool.get().map_err(|e| e.to_string())?;
+
+                let otp = redis::cmd("GET")
+                    .arg(format!("otp:{}", id.0))
+                    .query::<Option<String>>(&mut *conn)
+                    .map_err(|e| e.to_string());
+                otp
+            })
+            .await
+            .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;
+
+            match otp_result {
+                Ok(Some(otp)) => {
+                    if otp == form.otp {
+                        let id = id_clone.to_owned();
+                        let _ = web::block(move || {
+                            let mut conn = state.db_pool.get()?;
+                            db::user_db_fn::verify_user(&mut conn, id.0)
+                        })
+                        .await?
+                        .map_err(error::ErrorInternalServerError)?;
+
+                        Ok(HttpResponse::Ok().json(json!({
+                            "status": "ok",
+                            "message": "Email Verified!"
+                        })))
+                    } else {
+                        Ok(HttpResponse::Forbidden().json(json!({
+                            "status": "error",
+                            "message": "Invalid Otp!"
+                        })))
+                    }
+                }
+                Ok(None) => Ok(HttpResponse::NotFound().json(json!({
+                    "status": "error",
+                    "message": "Otp Not found, Resend Email?"
+                }))),
+                Err(_) => Ok(HttpResponse::Forbidden().json(json!({
+                    "status": "error",
+                    "message": "Invalid Otp!"
+                }))),
+            }
+        }
+        None => Ok(HttpResponse::BadRequest().json(json!({
+            "status": "error",
+            "message": "Invalid token"
+        }))),
+    }
+}
+
 pub fn user_config(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/user")
@@ -115,6 +186,11 @@ pub fn user_config(cfg: &mut web::ServiceConfig) {
                 web::resource("/orders")
                     .wrap(ExtractClientId)
                     .route(web::get().to(get_orders)),
+            )
+            .service(
+                web::resource("/verify_email")
+                    .wrap(ExtractClientId)
+                    .route(web::post().to(verify_email)),
             ),
     );
 }

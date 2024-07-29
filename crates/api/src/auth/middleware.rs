@@ -8,12 +8,17 @@ use actix_web::{
     Error, HttpMessage, HttpResponse,
 };
 use futures_util::future::{ok, LocalBoxFuture, Ready};
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::rc::Rc;
 use std::task::{Context, Poll};
 
 // middleware to extract the client ID from the request
 pub struct ExtractClientId;
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub struct IdKey(pub String);
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub struct JwtKey(pub String);
 
 impl<S, B> Transform<S, ServiceRequest> for ExtractClientId
 where
@@ -90,8 +95,8 @@ where
             if !jwt.is_empty() {
                 match verify_token(&jwt) {
                     Ok(id) => {
-                        req.extensions_mut().insert(id.clone());
-                        req.extensions_mut().insert(jwt.clone());
+                        req.extensions_mut().insert::<IdKey>(IdKey(id.clone()));
+                        req.extensions_mut().insert::<JwtKey>(JwtKey(jwt.clone()));
 
                         let res = srv.call(req).await?;
 
