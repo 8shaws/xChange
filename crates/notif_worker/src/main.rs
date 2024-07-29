@@ -2,7 +2,9 @@ use dotenvy::dotenv;
 use std::sync::Arc;
 use tokio::signal;
 
+mod constants;
 mod process;
+mod types;
 mod utils;
 
 use process::handle_process;
