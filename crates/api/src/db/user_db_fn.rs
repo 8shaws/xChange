@@ -4,7 +4,7 @@ use crate::auth;
 use crate::models::{self, User};
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
-use uuid;
+use uuid::{self, Uuid};
 
 use super::DbError;
 
@@ -62,4 +62,12 @@ pub fn get_user_by_contact(
         .optional()?;
 
     Ok(user_result)
+}
+
+pub fn verify_user(con: &mut PgConnection, id: String) -> Result<usize, DbError> {
+    use crate::schema::users::dsl::*;
+    diesel::update(users.filter(id.eq(id)))
+        .set(email_verified.eq(true))
+        .execute(con)
+        .map_err(|e| DbError::from(e))
 }
