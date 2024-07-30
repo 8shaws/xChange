@@ -64,10 +64,48 @@ pub fn get_user_by_contact(
     Ok(user_result)
 }
 
-pub fn verify_user(con: &mut PgConnection, id: String) -> Result<usize, DbError> {
+pub fn verify_user(con: &mut PgConnection, user_id: String) -> Result<usize, DbError> {
     use crate::schema::users::dsl::*;
-    diesel::update(users.filter(id.eq(id)))
+    let user_id = Uuid::parse_str(&user_id).expect("Error parsing user id");
+
+    diesel::update(users.filter(id.eq(user_id)))
         .set(email_verified.eq(true))
         .execute(con)
         .map_err(|e| DbError::from(e))
+}
+
+pub fn get_user_mail_by_id(
+    con: &mut PgConnection,
+    user_id: String,
+) -> Result<Option<String>, DbError> {
+    use crate::schema::users::dsl::*;
+
+    let user_id = Uuid::parse_str(&user_id).expect("Error parsing user id");
+
+    let mail = users
+        .filter(id.eq(user_id))
+        .select(email)
+        .get_result::<String>(con)
+        .optional()
+        .map_err(|e| DbError::from(e))?;
+
+    Ok(mail)
+}
+
+pub fn is_user_verified(con: &mut PgConnection, user_id: String) -> Result<bool, DbError> {
+    use crate::schema::users::dsl::*;
+
+    let user_id = Uuid::parse_str(&user_id).expect("Error parsing user id");
+
+    let verified = users
+        .filter(id.eq(user_id))
+        .select(email_verified)
+        .get_result::<Option<bool>>(con)
+        .optional()
+        .map_err(|e| DbError::from(e))?;
+
+    match verified.unwrap() {
+        Some(v) => Ok(v),
+        None => Ok(false),
+    }
 }
