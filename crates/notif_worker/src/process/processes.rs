@@ -15,21 +15,21 @@ pub async fn send_email_process(conn: &mut redis::Connection) {
     let result = redis::cmd("RPOP").arg(queue).query::<Option<String>>(conn);
 
     match result {
-        Ok(Some(res)) => {
-            let data: Value = serde_json::from_str(&res).unwrap();
+        Ok(Some(mail)) => {
             println!(
                 "{}: Worker {}: processing item from {}: {}",
                 current_time(),
                 thread_id,
                 queue,
-                data["mail"]
+                mail
             );
 
             let otp = generate_otp();
+            let otp_clone = otp.clone();
 
             let catch_otp_result = redis::cmd("SET")
-                .arg(format!("otp:{}", data["id"]))
-                .arg(&otp)
+                .arg(format!("otp:{}", mail))
+                .arg(otp)
                 .query::<Option<String>>(conn);
 
             match catch_otp_result {
@@ -38,16 +38,17 @@ pub async fn send_email_process(conn: &mut redis::Connection) {
                         "{}: Worker {}: OTP for {} saved successfully!",
                         current_time(),
                         thread_id,
-                        data["mail"]
+                        mail
                     );
-                    send_mail(&data["mail"].as_str().unwrap(), &otp, &thread_id).await;
+
+                    send_mail(&mail, &otp_clone, &thread_id).await;
                 }
                 Err(err) => {
                     println!(
                         "{}: Worker {}: Failed to save OTP for {}: {}",
                         current_time(),
                         thread_id,
-                        data["mail"],
+                        mail,
                         err
                     );
                 }
