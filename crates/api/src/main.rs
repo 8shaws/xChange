@@ -10,6 +10,7 @@ use std::time::SystemTime;
 
 mod auth;
 mod db;
+mod middlewares;
 mod models;
 mod redis;
 mod route;
