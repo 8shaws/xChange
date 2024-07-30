@@ -1,12 +1,11 @@
 use crate::auth;
-use crate::auth::middleware::{ExtractClientId, IdKey, JwtKey};
+use crate::auth::middleware::{ExtractClientId, IdKey};
 use crate::db::{self};
 use crate::models::*;
-use crate::types::{EmailVerifyData, VerifyEmailBody};
+use crate::types::VerifyEmailBody;
 use actix_web::{error, post, web, HttpMessage, HttpRequest, HttpResponse, Responder, Result};
 use r2d2_redis::redis;
 use serde_json::json;
-use std::sync::Arc;
 
 #[post("/login")]
 async fn login(state: web::Data<AppState>, form: web::Json<LoginUser>) -> Result<impl Responder> {
@@ -38,6 +37,7 @@ async fn login(state: web::Data<AppState>, form: web::Json<LoginUser>) -> Result
                 HttpResponse::Ok().json(json!({
                     "status": "ok",
                     "jwt": token,
+                    "user": user,
                     "message": "Login successful"
                 }))
             } else {
@@ -76,17 +76,12 @@ async fn register(
     };
 
     let mail = created_user.email.clone();
-    let id = created_user.id.clone().to_string();
     let result = web::block(move || {
         let mut conn = redis_pool.get().map_err(|e| e.to_string())?;
 
-        let data = EmailVerifyData { id: id, mail: mail };
-
-        let json_data = serde_json::to_string(&data).unwrap();
-
         let _: () = redis::cmd("LPUSH")
             .arg("user_email_verify")
-            .arg(json_data)
+            .arg(mail)
             .query(&mut *conn)
             .map_err(|e| e.to_string())?;
         Ok::<(), String>(())
@@ -118,62 +113,73 @@ async fn verify_email(
     state: web::Data<AppState>,
     req: HttpRequest,
     form: web::Json<VerifyEmailBody>,
-) -> Result<impl Responder> {
+) -> Result<HttpResponse> {
     let id = req.extensions().get::<IdKey>().cloned();
 
-    match id {
-        Some(id) => {
-            let redis_pool = state.redis_pool.clone();
-            let id_clone = id.clone();
+    if let Some(id) = id {
+        let redis_pool = state.redis_pool.clone();
+        let db_pool = state.db_pool.clone();
+        let id_clone = id.clone().0;
+        let form_otp = form.otp.clone();
 
-            let otp_result = web::block(move || {
-                let mut conn = redis_pool.get().map_err(|e| e.to_string())?;
+        let otp_result = web::block(move || {
+            let mut redis_conn = redis_pool.get().map_err(|e| e.to_string())?;
+            let mut db_conn = db_pool.get().map_err(|e| e.to_string())?;
 
-                let otp = redis::cmd("GET")
-                    .arg(format!("otp:{}", id.0))
-                    .query::<Option<String>>(&mut *conn)
-                    .map_err(|e| e.to_string());
-                otp
-            })
-            .await
-            .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;
+            let mail = db::user_db_fn::get_user_mail_by_id(&mut db_conn, id.0);
 
-            match otp_result {
-                Ok(Some(otp)) => {
-                    if otp == form.otp {
-                        let id = id_clone.to_owned();
-                        let _ = web::block(move || {
-                            let mut conn = state.db_pool.get()?;
-                            db::user_db_fn::verify_user(&mut conn, id.0)
-                        })
-                        .await?
-                        .map_err(error::ErrorInternalServerError)?;
+            match mail {
+                Ok(Some(mail)) => {
+                    let otp: Option<String> = redis::cmd("GET")
+                        .arg(format!("otp:{}", mail))
+                        .query(&mut *redis_conn)
+                        .map_err(|e| e.to_string())?;
 
-                        Ok(HttpResponse::Ok().json(json!({
-                            "status": "ok",
-                            "message": "Email Verified!"
-                        })))
-                    } else {
-                        Ok(HttpResponse::Forbidden().json(json!({
-                            "status": "error",
-                            "message": "Invalid Otp!"
-                        })))
+                    match otp {
+                        Some(otp) => Ok(Some(otp)),
+                        None => Ok(None),
                     }
                 }
-                Ok(None) => Ok(HttpResponse::NotFound().json(json!({
-                    "status": "error",
-                    "message": "Otp Not found, Resend Email?"
-                }))),
-                Err(_) => Ok(HttpResponse::Forbidden().json(json!({
-                    "status": "error",
-                    "message": "Invalid Otp!"
-                }))),
+                Ok(None) => return Ok(None),
+                Err(e) => Err(e.to_string()),
             }
+        })
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;
+        let db_pool = state.db_pool.clone();
+
+        match otp_result {
+            Ok(Some(otp)) if otp == form_otp => {
+                let _ = web::block(move || {
+                    let mut db_conn = db_pool.get()?;
+                    db::user_db_fn::verify_user(&mut db_conn, id_clone)
+                })
+                .await
+                .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;
+
+                Ok(HttpResponse::Ok().json(json!({
+                    "status": "ok",
+                    "message": "Email Verified!"
+                })))
+            }
+            Ok(Some(_)) => Ok(HttpResponse::BadRequest().json(json!({
+                "status": "error",
+                "message": "Invalid OTP"
+            }))),
+            Ok(None) => Ok(HttpResponse::NotFound().json(json!({
+                "status": "error",
+                "message": "OTP not found, resend email?"
+            }))),
+            Err(_) => Ok(HttpResponse::InternalServerError().json(json!({
+                "status": "error",
+                "message": "Internal Server Error"
+            }))),
         }
-        None => Ok(HttpResponse::BadRequest().json(json!({
+    } else {
+        Ok(HttpResponse::BadRequest().json(json!({
             "status": "error",
             "message": "Invalid token"
-        }))),
+        })))
     }
 }
 
