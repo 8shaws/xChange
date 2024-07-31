@@ -6,7 +6,7 @@ use env_logger::Builder;
 use lazy_static::lazy_static;
 use num_cpus;
 use serde_json::json;
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 mod auth;
 mod db;
@@ -17,6 +17,7 @@ mod route;
 mod schema;
 mod types;
 
+use crate::middlewares::rate_limit::RateLimiter;
 use crate::route::user::user_config;
 
 lazy_static! {
@@ -47,18 +48,20 @@ async fn main() -> std::io::Result<()> {
     let dp_pool = initialize_db_pool();
     let redis_pool = redis::initialize_redis_pool();
 
-    let app_state = models::AppState {
+    let app_state = web::Data::new(models::AppState {
         db_pool: dp_pool,
         redis_pool: redis_pool,
-    };
+    });
+
+    let rate_limiter = web::Data::new(RateLimiter::new(10, Duration::from_secs(60)));
 
     println!("{:?}: Api Server is running on port: {}", *START_TIME, 8080);
 
     HttpServer::new(move || {
         App::new()
-            .app_data(web::Data::new(app_state.clone()))
+            .app_data(app_state.clone())
             .wrap(middleware::Logger::default())
-            .configure(user_config)
+            .configure(|cfg| user_config(cfg, app_state.clone(), rate_limiter.clone()))
             .route("/", web::get().to(root))
             .route("/_health", web::get().to(root))
     })

@@ -1,11 +1,17 @@
 use crate::auth;
-use crate::auth::middleware::{ExtractClientId, IdKey};
 use crate::db::{self};
+use crate::middlewares::un_verify_user::UnVerifyUser;
 use crate::models::*;
-use crate::types::VerifyEmailBody;
+use crate::types::{ResendOtpBody, VerifyEmailBody};
 use actix_web::{error, post, web, HttpMessage, HttpRequest, HttpResponse, Responder, Result};
 use r2d2_redis::redis;
 use serde_json::json;
+
+use crate::middlewares::{
+    extract_client_id::{ExtractClientId, IdKey},
+    rate_limit::RateLimiter,
+    verify_user::VerifyUser,
+};
 
 #[post("/login")]
 async fn login(state: web::Data<AppState>, form: web::Json<LoginUser>) -> Result<impl Responder> {
@@ -183,13 +189,65 @@ async fn verify_email(
     }
 }
 
-pub fn user_config(cfg: &mut web::ServiceConfig) {
+pub async fn resend_otp(
+    state: web::Data<AppState>,
+    form: web::Json<ResendOtpBody>,
+    req: HttpRequest,
+) -> Result<impl Responder> {
+    let id_key = req.extensions().get::<IdKey>().cloned();
+
+    match id_key {
+        Some(id) => {
+            let redis_pool = state.redis_pool.clone();
+            let mail = form.mail.clone();
+
+            let result = web::block(move || {
+                let mut conn = redis_pool.get().map_err(|e| e.to_string())?;
+
+                let _: () = redis::cmd("LPUSH")
+                    .arg("user_email_verify")
+                    .arg(mail)
+                    .query(&mut *conn)
+                    .map_err(|e| e.to_string())?;
+                Ok::<(), String>(())
+            })
+            .await
+            .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;
+
+            if let Ok(_) = result {
+                Ok(HttpResponse::Ok().json(json!({
+                    "status": "ok",
+                    "message": "OTP sent"
+                })))
+            } else {
+                Ok(HttpResponse::InternalServerError().json(json!({
+                    "status": "error",
+                    "message": "Internal Server Error"
+                })))
+            }
+        }
+        None => Ok(HttpResponse::BadRequest().json(json!({
+            "status": "error",
+            "message": "Invalid token"
+        }))),
+    }
+}
+
+pub fn user_config(
+    cfg: &mut web::ServiceConfig,
+    app_state: web::Data<AppState>,
+    rate_limiter: web::Data<RateLimiter>,
+) {
+    let verify_user = VerifyUser::new(app_state.clone());
+    let un_verify_user = UnVerifyUser::new(app_state.clone());
+
     cfg.service(
         web::scope("/user")
             .service(login)
             .service(register)
             .service(
                 web::resource("/orders")
+                    .wrap(verify_user)
                     .wrap(ExtractClientId)
                     .route(web::get().to(get_orders)),
             )
@@ -197,6 +255,12 @@ pub fn user_config(cfg: &mut web::ServiceConfig) {
                 web::resource("/verify_email")
                     .wrap(ExtractClientId)
                     .route(web::post().to(verify_email)),
+            )
+            .service(
+                web::resource("/resend_otp")
+                    .wrap(un_verify_user)
+                    .wrap(ExtractClientId)
+                    .route(web::post().to(resend_otp)),
             ),
     );
 }

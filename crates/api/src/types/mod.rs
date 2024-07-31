@@ -15,3 +15,8 @@ pub struct VerifyEmailBody {
 pub struct VerifyUser {
     pub email_verified: Option<bool>,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct ResendOtpBody {
+    pub mail: String,
+}

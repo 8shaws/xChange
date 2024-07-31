@@ -1,4 +1,4 @@
-use super::utils::verify_token;
+use crate::auth::utils::verify_token;
 use actix_service::Service;
 use actix_web::{
     body::EitherBody,
