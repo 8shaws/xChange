@@ -1,5 +1,4 @@
-use crate::db::user_db_fn::is_user_verified;
-use crate::{middlewares::extract_client_id::IdKey, models::AppState};
+use crate::{middlewares::extract_client_id::IdKey, types::AppState};
 use actix_service::Service;
 use actix_web::web::Data;
 use actix_web::{
@@ -7,6 +6,7 @@ use actix_web::{
     dev::{ServiceRequest, ServiceResponse, Transform},
     Error, HttpMessage, HttpResponse,
 };
+use db::fns::user_db_fn::is_user_verified;
 use futures_util::future::{ok, LocalBoxFuture, Ready};
 use serde_json::json;
 use std::rc::Rc;

@@ -1,7 +1,7 @@
 extern crate diesel;
 
-use crate::auth;
 use crate::models::{self, User};
+use common::types;
 use diesel::pg::PgConnection;
 use diesel::prelude::*;
 use uuid::{self, Uuid};
@@ -11,16 +11,15 @@ use super::DbError;
 // inserts new user to db based on RegisterUser struct
 pub fn insert_user(
     con: &mut PgConnection,
-    user: models::RegisterUser,
+    user: types::user::RegisterUser,
+    hash: String,
 ) -> Result<models::User, DbError> {
     use crate::schema::users::dsl::*;
-
-    let hash = auth::utils::hash_password(&user.password);
 
     let new_user = models::User {
         id: uuid::Uuid::new_v4(),
         username: user.username,
-        hash_password: hash.0,
+        hash_password: hash,
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,

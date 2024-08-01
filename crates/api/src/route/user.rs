@@ -1,9 +1,7 @@
 use crate::auth;
-use crate::db::{self};
 use crate::middlewares::un_verify_user::UnVerifyUser;
-use crate::models::*;
-use crate::types::{ResendOtpBody, VerifyEmailBody};
 use actix_web::{error, post, web, HttpMessage, HttpRequest, HttpResponse, Responder, Result};
+use common::types::user::{LoginUser, RegisterUser, ResendOtpBody, VerifyEmailBody};
 use r2d2_redis::redis;
 use serde_json::json;
 
@@ -13,6 +11,10 @@ use crate::middlewares::{
     verify_user::VerifyUser,
 };
 
+use db::fns::user_db_fn;
+
+use crate::types::AppState;
+
 #[post("/login")]
 async fn login(state: web::Data<AppState>, form: web::Json<LoginUser>) -> Result<impl Responder> {
     let form = form.into_inner();
@@ -20,9 +22,9 @@ async fn login(state: web::Data<AppState>, form: web::Json<LoginUser>) -> Result
         let mut con = state.db_pool.get()?;
 
         let db_user = if form.login_field.contains("@") {
-            db::user_db_fn::get_user_by_email(&mut con, &form.login_field)
+            user_db_fn::get_user_by_email(&mut con, &form.login_field)
         } else {
-            db::user_db_fn::get_user_by_contact(&mut con, &form.login_field)
+            user_db_fn::get_user_by_contact(&mut con, &form.login_field)
         };
         db_user
     })
@@ -71,7 +73,8 @@ async fn register(
 
     let created_user = web::block(move || {
         let mut conn = state.db_pool.get()?;
-        db::user_db_fn::insert_user(&mut conn, form.into_inner())
+        let hash = auth::utils::hash_password(&form.password);
+        user_db_fn::insert_user(&mut conn, form.into_inner(), hash.0)
     })
     .await?
     .map_err(error::ErrorInternalServerError)?;
@@ -132,7 +135,7 @@ async fn verify_email(
             let mut redis_conn = redis_pool.get().map_err(|e| e.to_string())?;
             let mut db_conn = db_pool.get().map_err(|e| e.to_string())?;
 
-            let mail = db::user_db_fn::get_user_mail_by_id(&mut db_conn, id.0);
+            let mail = user_db_fn::get_user_mail_by_id(&mut db_conn, id.0);
 
             match mail {
                 Ok(Some(mail)) => {
@@ -158,7 +161,7 @@ async fn verify_email(
             Ok(Some(otp)) if otp == form_otp => {
                 let _ = web::block(move || {
                     let mut db_conn = db_pool.get()?;
-                    db::user_db_fn::verify_user(&mut db_conn, id_clone)
+                    user_db_fn::verify_user(&mut db_conn, id_clone)
                 })
                 .await
                 .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;

@@ -1,4 +1,3 @@
-use crate::redis::RedisPool;
 use chrono::NaiveDateTime;
 use diesel::{prelude::*, query_builder::QueryId};
 use serde::{Deserialize, Serialize};
@@ -37,15 +36,3 @@ pub struct RegisterUser {
 //     Email(String),
 //     ContactNumber(String),
 // }
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LoginUser {
-    pub login_field: String,
-    pub password: String,
-}
-
-#[derive(Debug, Clone)]
-pub struct AppState {
-    pub db_pool: crate::db::DbPool,
-    pub redis_pool: RedisPool,
-}
