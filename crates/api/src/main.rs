@@ -1,20 +1,18 @@
 extern crate r2d2;
 use actix_web::{middleware, web, App, HttpResponse, HttpServer, Responder};
-use db::initialize_db_pool;
 use dotenvy::dotenv;
 use env_logger::Builder;
 use lazy_static::lazy_static;
 use num_cpus;
+use route::order::order_config;
 use serde_json::json;
 use std::time::{Duration, SystemTime};
 
+use db::fns::initialize_db_pool;
 mod auth;
-mod db;
 mod middlewares;
-mod models;
 mod redis;
 mod route;
-mod schema;
 mod types;
 
 use crate::middlewares::rate_limit::RateLimiter;
@@ -48,7 +46,7 @@ async fn main() -> std::io::Result<()> {
     let dp_pool = initialize_db_pool();
     let redis_pool = redis::initialize_redis_pool();
 
-    let app_state = web::Data::new(models::AppState {
+    let app_state = web::Data::new(types::AppState {
         db_pool: dp_pool,
         redis_pool: redis_pool,
     });
@@ -62,6 +60,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(app_state.clone())
             .wrap(middleware::Logger::default())
             .configure(|cfg| user_config(cfg, app_state.clone(), rate_limiter.clone()))
+            .configure(|cfg| order_config(cfg, app_state.clone()))
             .route("/", web::get().to(root))
             .route("/_health", web::get().to(root))
     })

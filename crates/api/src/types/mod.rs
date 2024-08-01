@@ -1,22 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
-pub struct EmailVerifyData {
-    pub id: String,
-    pub mail: String,
-}
+use crate::redis::RedisPool;
 
-#[derive(Serialize, Deserialize)]
-pub struct VerifyEmailBody {
-    pub otp: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct VerifyUser {
-    pub email_verified: Option<bool>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct ResendOtpBody {
-    pub mail: String,
+#[derive(Debug, Clone)]
+pub struct AppState {
+    pub db_pool: db::fns::DbPool,
+    pub redis_pool: RedisPool,
 }
