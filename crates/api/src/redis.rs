@@ -19,10 +19,10 @@ pub fn initialize_redis_pool() -> RedisPool {
         .expect("Failed to create pool")
 }
 
-struct RedisClient;
+pub struct RedisClient;
 
 impl RedisClient {
-    fn place_order_and_wait(
+    pub fn place_order_and_wait(
         pool: &RedisPool,
         order: NewOrder,
     ) -> impl futures::Future<Output = Result<OrderResponse, RedisError>> {
