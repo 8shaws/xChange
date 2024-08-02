@@ -38,6 +38,7 @@ pub enum OrderStatus {
 pub struct NewOrder {
     pub symbol: String,
     pub side: OrderSide,
+    #[serde(rename = "type")]
     pub type_: OrderType,
     pub time_in_force: TimeInForce,
     pub quantity: f64,
@@ -45,4 +46,29 @@ pub struct NewOrder {
     pub price: f64,
     pub stop_price: f64,
     pub timestamp: i64,
+    pub client_order_id: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct OrderResponse {
+    pub symbol: String,
+    pub order_id: u64,
+    pub client_order_id: String,
+    pub transact_time: u64,
+    pub price: f64,
+    pub orig_qty: f64,
+    pub executed_ty: f64,
+    pub status: OrderStatus,
+    pub time_in_force: TimeInForce,
+    #[serde(rename = "type")]
+    pub type_: OrderType,
+    pub side: OrderSide,
+    pub fills: Vec<Fill>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Fill {
+    pub price: f64,
+    pub qty: f64,
+    pub commission: f64,
 }
