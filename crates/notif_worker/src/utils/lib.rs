@@ -6,7 +6,7 @@ use totp_rs::{Algorithm, TOTP};
 
 use crate::constants::get_email_html;
 
-use super::current_time;
+use common::utils::current_time;
 
 pub async fn send_mail(mail: &str, otp: &str, thread_id: &str) {
     let smtp_username = env::var("SMTP_USERNAME").expect("SMTP_USERNAME must be set");

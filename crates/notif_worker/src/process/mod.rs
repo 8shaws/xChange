@@ -5,9 +5,9 @@ use tokio::time::{sleep, Duration};
 
 mod processes;
 
-use crate::utils::current_time;
-use crate::utils::get_queue_with_max_length;
-use crate::utils::RedisPool;
+use common::redis::RedisPool;
+use common::utils::current_time;
+use common::utils::get_queue_with_max_length;
 
 pub async fn handle_process(conn: Arc<RedisPool>, queues: Vec<&str>) {
     dotenv().ok();

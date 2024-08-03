@@ -7,8 +7,8 @@ mod process;
 mod types;
 mod utils;
 
+use common::redis::initialize_redis_pool;
 use process::handle_process;
-use utils::initialize_redis_pool;
 
 #[tokio::main]
 async fn main() {
@@ -36,7 +36,10 @@ async fn main() {
 
     let shutdown_signal = async {
         signal::ctrl_c().await.expect("Failed to listen for ctrl+c");
-        println!("{}: Shutdown signal received", utils::current_time());
+        println!(
+            "{}: Shutdown signal received",
+            common::utils::current_time()
+        );
     };
 
     shutdown_signal.await;
@@ -44,5 +47,5 @@ async fn main() {
     for handle in worker_handlers {
         handle.abort();
     }
-    println!("{}: Shutting down...", utils::current_time());
+    println!("{}: Shutting down...", common::utils::current_time());
 }
