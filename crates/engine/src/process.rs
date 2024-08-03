@@ -3,8 +3,6 @@ use std::sync::Arc;
 use std::thread;
 use tokio::time::{sleep, Duration};
 
-mod processes;
-
 use common::redis::RedisPool;
 use common::utils::current_time;
 use common::utils::get_queue_with_max_length;
@@ -19,9 +17,6 @@ pub async fn handle_process(conn: Arc<RedisPool>, queues: Vec<&str>) {
         match con_result {
             Ok(mut conn) => {
                 if let Some(max_queue) = get_queue_with_max_length(&mut conn, &queues) {
-                    if max_queue == "user_email_verify" {
-                        processes::send_email_process(&mut conn).await;
-                    }
                 } else {
                     println!(
                         "{}: Worker {}: All queues are empty, waiting...",

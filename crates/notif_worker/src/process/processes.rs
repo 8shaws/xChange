@@ -4,9 +4,9 @@ use serde_json::Value;
 use std::thread;
 use tokio::time::{sleep, Duration};
 
-use crate::utils::current_time;
 use crate::utils::lib::generate_otp;
 use crate::utils::lib::send_mail;
+use common::utils::current_time;
 
 pub async fn send_email_process(conn: &mut redis::Connection) {
     let thread_id = format!("{:?}", thread::current().id());
