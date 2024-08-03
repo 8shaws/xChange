@@ -5,14 +5,18 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 
 COPY crates/notif_worker/Cargo.toml crates/notif_worker/
+COPY crates/common/Cargo.toml crates/common/
 
-RUN mkdir -p crates/notif_worker/src && echo "fn main() {}" > crates/notif_worker/src/main.rs
+RUN mkdir -p crates/notif_worker/src crates/common/src \
+    && echo "fn main() {}" > crates/notif_worker/src/main.rs \
+    && echo "fn main() {}" > crates/common/src/main.rs
 
 RUN cargo fetch
 
-RUN rm crates/notif_worker/src/main.rs
+RUN rm crates/notif_worker/src/main.rs crates/common/src/main.rs
 
 COPY crates/notif_worker/src ./crates/notif_worker/src
+COPY crates/common/src ./crates/common/src
 
 RUN cargo build --release -p notif_worker
 
