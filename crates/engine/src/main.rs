@@ -4,6 +4,7 @@ use tokio;
 use tokio::signal;
 
 mod process;
+mod trade;
 
 use common::redis::initialize_redis_pool;
 use process::handle_process;
@@ -17,7 +18,7 @@ async fn main() {
         .parse::<usize>()
         .expect("NO_WORKER_THREADS must be a positive integer");
 
-    let queues = vec!["user_email_verify"];
+    let queues = vec!["order"];
 
     let pool = Arc::new(initialize_redis_pool());
 
