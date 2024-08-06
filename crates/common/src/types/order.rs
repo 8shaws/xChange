@@ -1,20 +1,20 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum OrderSide {
     SELL,
     BUY,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum OrderType {
     MARKET,
     LIMIT,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum TimeInForce {
     GTC,
@@ -22,7 +22,7 @@ pub enum TimeInForce {
     FOK,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum OrderStatus {
     NEW,
@@ -66,9 +66,29 @@ pub struct OrderResponse {
     pub fills: Vec<Fill>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Fill {
     pub price: f64,
     pub qty: f64,
     pub commission: f64,
+    pub client_order_id: String,
+    pub side: OrderSide,
+    pub filled: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Order {
+    pub symbol: String,
+    pub order_id: u64,
+    pub client_order_id: String,
+    pub transact_time: u64,
+    pub price: f64,
+    pub orig_qty: f64,
+    pub executed_ty: f64,
+    pub status: OrderStatus,
+    pub time_in_force: TimeInForce,
+    #[serde(rename = "type")]
+    pub type_: OrderType,
+    pub side: OrderSide,
+    pub fills: Vec<Fill>,
 }
