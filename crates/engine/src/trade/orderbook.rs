@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use common::types::order::{Fill, Order, OrderSide};
 
 pub struct Orderbook {
@@ -118,5 +120,33 @@ impl Orderbook {
 
         self.bids
             .retain(|bid| !filled_bid_order_id.contains(&bid.order_id.clone()));
+    }
+
+    pub fn get_depth(&self) -> (Vec<(String, String)>, Vec<(String, String)>) {
+        let mut bids_obj: HashMap<String, f64> = HashMap::new();
+        let mut asks_obj: HashMap<String, f64> = HashMap::new();
+        for order in &self.bids {
+            let price_str = order.price.to_string();
+            let entry = bids_obj.entry(price_str.clone()).or_insert(0.0);
+            *entry += order.orig_qty;
+        }
+
+        for order in &self.asks {
+            let price_str = order.price.to_string();
+            let entry = asks_obj.entry(price_str.clone()).or_insert(0.0);
+            *entry += order.orig_qty;
+        }
+
+        let bids: Vec<(String, String)> = bids_obj
+            .into_iter()
+            .map(|(price, quantity)| (price, quantity.to_string()))
+            .collect();
+
+        let asks: Vec<(String, String)> = asks_obj
+            .into_iter()
+            .map(|(price, quantity)| (price, quantity.to_string()))
+            .collect();
+
+        (bids, asks)
     }
 }
