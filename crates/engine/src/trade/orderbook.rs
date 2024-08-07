@@ -1,6 +1,4 @@
-use common::types::order::{Fill, Order, OrderResponse, OrderSide};
-
-use crate::types::AddOrderResponse;
+use common::types::order::{Fill, Order, OrderSide};
 
 pub struct Orderbook {
     pub bids: Vec<Order>,
@@ -48,8 +46,7 @@ impl Orderbook {
     pub fn add_order(&mut self, order: &mut Order) {
         match order.side {
             OrderSide::BUY => {
-                let executed_order = self.match_bid(order);
-                order.executed_qty = executed_order.executed_qty;
+                self.match_bid(order);
 
                 if order.executed_qty == order.orig_qty {
                     return;
@@ -58,21 +55,23 @@ impl Orderbook {
                 return;
             }
             OrderSide::SELL => {
-                // Add the order to the asks
+                self.match_asks(order);
+
+                if order.executed_qty == order.orig_qty {
+                    return;
+                }
+                self.asks.push(order.clone());
+                return;
             }
         }
     }
 
-    fn match_bid(&mut self, order: &mut Order) -> AddOrderResponse {
-        let mut response = AddOrderResponse {
-            fills: vec![],
-            executed_qty: 0.0,
-        };
-
+    fn match_bid(&mut self, order: &mut Order) {
+        order.executed_qty = 0.0;
         let mut filled_ask_order_id: Vec<u64> = vec![];
         for ask in self.asks.iter_mut() {
-            if ask.price <= order.price && response.executed_qty < order.orig_qty {
-                let fill_qty = ask.orig_qty.min(order.orig_qty - response.executed_qty);
+            if ask.price <= order.price && order.executed_qty < order.orig_qty {
+                let fill_qty = ask.orig_qty.min(order.orig_qty - order.executed_qty);
                 let fill = Fill {
                     price: ask.price,
                     qty: fill_qty,
@@ -82,8 +81,8 @@ impl Orderbook {
                     filled: fill_qty,
                 };
                 ask.executed_qty += fill_qty;
-                response.fills.push(fill);
-                response.executed_qty += fill_qty;
+                order.fills.push(fill);
+                order.executed_qty += fill_qty;
 
                 if ask.executed_qty == ask.orig_qty {
                     filled_ask_order_id.push(ask.order_id.clone());
@@ -92,6 +91,32 @@ impl Orderbook {
         }
         self.asks
             .retain(|ask| !filled_ask_order_id.contains(&ask.order_id.clone()));
-        response
+    }
+
+    fn match_asks(&mut self, order: &mut Order) {
+        order.executed_qty = 0.0;
+        let mut filled_bid_order_id: Vec<u64> = vec![];
+        for bids in self.bids.iter_mut() {
+            if bids.price >= order.price && order.executed_qty < order.orig_qty {
+                let fill_qty = bids.orig_qty.min(order.orig_qty - order.executed_qty);
+                let fill = Fill {
+                    price: bids.price,
+                    qty: fill_qty,
+                    commission: 0.0,
+                    client_order_id: order.client_order_id.clone(),
+                    side: order.side.clone(),
+                    filled: fill_qty,
+                };
+                bids.executed_qty += fill_qty;
+                order.fills.push(fill);
+                order.executed_qty += fill_qty;
+                if bids.executed_qty == bids.orig_qty {
+                    filled_bid_order_id.push(bids.order_id.clone());
+                }
+            }
+        }
+
+        self.bids
+            .retain(|bid| !filled_bid_order_id.contains(&bid.order_id.clone()));
     }
 }
