@@ -81,6 +81,7 @@ pub struct Order {
     pub symbol: String,
     pub order_id: u64,
     pub client_order_id: String,
+    pub client_id: String,
     pub transact_time: u64,
     pub price: f64,
     pub orig_qty: f64,
