@@ -149,4 +149,29 @@ impl Orderbook {
 
         (bids, asks)
     }
+
+    pub fn get_open_orders(&self, client_id: String) -> Vec<Order> {
+        let mut open_orders: Vec<Order> = vec![];
+        for order in self.bids.iter() {
+            if order.client_id == client_id {
+                open_orders.push(order.clone());
+            }
+        }
+
+        for order in self.asks.iter() {
+            if order.client_id == client_id {
+                open_orders.push(order.clone());
+            }
+        }
+
+        open_orders
+    }
+
+    pub fn cancel_bid(&mut self, order_id: u64) {
+        self.bids.retain(|order| order.order_id != order_id);
+    }
+
+    pub fn cancel_ask(&mut self, order_id: u64) {
+        self.asks.retain(|order| order.order_id != order_id);
+    }
 }
