@@ -57,7 +57,7 @@ pub struct OrderResponse {
     pub transact_time: u64,
     pub price: f64,
     pub orig_qty: f64,
-    pub executed_ty: f64,
+    pub executed_qty: f64,
     pub status: OrderStatus,
     pub time_in_force: TimeInForce,
     #[serde(rename = "type")]
@@ -84,7 +84,7 @@ pub struct Order {
     pub transact_time: u64,
     pub price: f64,
     pub orig_qty: f64,
-    pub executed_ty: f64,
+    pub executed_qty: f64,
     pub status: OrderStatus,
     pub time_in_force: TimeInForce,
     #[serde(rename = "type")]
