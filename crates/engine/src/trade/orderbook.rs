@@ -1,4 +1,6 @@
-use common::types::order::Order;
+use common::types::order::{Fill, Order, OrderResponse, OrderSide};
+
+use crate::types::AddOrderResponse;
 
 pub struct Orderbook {
     pub bids: Vec<Order>,
@@ -41,5 +43,55 @@ impl Orderbook {
             current_price: self.current_price,
             last_trade_id: self.last_trade_id.clone(),
         }
+    }
+
+    pub fn add_order(&mut self, order: &mut Order) {
+        match order.side {
+            OrderSide::BUY => {
+                let executed_order = self.match_bid(order);
+                order.executed_qty = executed_order.executed_qty;
+
+                if order.executed_qty == order.orig_qty {
+                    return;
+                }
+                self.bids.push(order.clone());
+                return;
+            }
+            OrderSide::SELL => {
+                // Add the order to the asks
+            }
+        }
+    }
+
+    fn match_bid(&mut self, order: &mut Order) -> AddOrderResponse {
+        let mut response = AddOrderResponse {
+            fills: vec![],
+            executed_qty: 0.0,
+        };
+
+        let mut filled_ask_order_id: Vec<u64> = vec![];
+        for ask in self.asks.iter_mut() {
+            if ask.price <= order.price && response.executed_qty < order.orig_qty {
+                let fill_qty = ask.orig_qty.min(order.orig_qty - response.executed_qty);
+                let fill = Fill {
+                    price: ask.price,
+                    qty: fill_qty,
+                    commission: 0.0,
+                    client_order_id: order.client_order_id.clone(),
+                    side: order.side.clone(),
+                    filled: fill_qty,
+                };
+                ask.executed_qty += fill_qty;
+                response.fills.push(fill);
+                response.executed_qty += fill_qty;
+
+                if ask.executed_qty == ask.orig_qty {
+                    filled_ask_order_id.push(ask.order_id.clone());
+                }
+            }
+        }
+        self.asks
+            .retain(|ask| !filled_ask_order_id.contains(&ask.order_id.clone()));
+        response
     }
 }
