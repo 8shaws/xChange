@@ -5,6 +5,7 @@ use tokio::signal;
 
 mod process;
 mod trade;
+mod types;
 
 use common::redis::initialize_redis_pool;
 use process::handle_process;

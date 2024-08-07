@@ -1,0 +1,177 @@
+{
+  "orderbook": [
+    {
+      "base_asset": "BTC",
+      "quote_asset": "USDC",
+      "bids": [
+        {
+          "price": 30000.5,
+          "quantity": 0.1,
+          "order_id": 1,
+          "client_order_id": "a1b2c3d4-e5f6-7g8h-9i0j-k1l2m3n4o5p6",
+          "transact_time": 1696446000000,
+          "orig_qty": 0.1,
+          "executed_qty": 0.0,
+          "status": "NEW",
+          "time_in_force": "GTC",
+          "type": "LIMIT",
+          "side": "BUY",
+          "fills": []
+        },
+        {
+          "price": 29950.2,
+          "quantity": 0.2,
+          "order_id": 2,
+          "client_order_id": "b2c3d4e5-f6g7-8h9i-0j1k-2l3m4n5o6p7",
+          "transact_time": 1696446001000,
+          "orig_qty": 0.2,
+          "executed_qty": 0.0,
+          "status": "NEW",
+          "time_in_force": "GTC",
+          "type": "LIMIT",
+          "side": "BUY",
+          "fills": []
+        },
+        {
+          "price": 29975.3,
+          "quantity": 0.15,
+          "order_id": 3,
+          "client_order_id": "c3d4e5f6-g7h8-9i0j-k1l2-m3n4o5p6q7r",
+          "transact_time": 1696446002000,
+          "orig_qty": 0.15,
+          "executed_qty": 0.0,
+          "status": "NEW",
+          "time_in_force": "GTC",
+          "type": "LIMIT",
+          "side": "BUY",
+          "fills": []
+        },
+        {
+          "price": 29990.1,
+          "quantity": 0.25,
+          "order_id": 4,
+          "client_order_id": "d4e5f6g7-h8i9-j0k1-l2m3-n4o5p6q7r8s",
+          "transact_time": 1696446003000,
+          "orig_qty": 0.25,
+          "executed_qty": 0.0,
+          "status": "NEW",
+          "time_in_force": "GTC",
+          "type": "LIMIT",
+          "side": "BUY",
+          "fills": []
+        },
+        {
+          "price": 29960.8,
+          "quantity": 0.3,
+          "order_id": 5,
+          "client_order_id": "e5f6g7h8-i9j0-k1l2-m3n4-o5p6q7r8s9t",
+          "transact_time": 1696446004000,
+          "orig_qty": 0.3,
+          "executed_qty": 0.0,
+          "status": "NEW",
+          "time_in_force": "GTC",
+          "type": "LIMIT",
+          "side": "BUY",
+          "fills": []
+        }
+      ],
+      "asks": [
+        {
+          "price": 31000.5,
+          "quantity": 0.1,
+          "order_id": 1,
+          "client_order_id": "f6g7h8i9-j0k1-l2m3-n4o5-p6q7r8s9t0u",
+          "transact_time": 1696446005000,
+          "orig_qty": 0.1,
+          "executed_qty": 0.0,
+          "status": "NEW",
+          "time_in_force": "GTC",
+          "type": "LIMIT",
+          "side": "SELL",
+          "fills": []
+        },
+        {
+          "price": 31200.3,
+          "quantity": 0.2,
+          "order_id": 2,
+          "client_order_id": "g7h8i9j0-k1l2-m3n4-o5p6-q7r8s9t0u1v",
+          "transact_time": 1696446006000,
+          "orig_qty": 0.2,
+          "executed_qty": 0.0,
+          "status": "NEW",
+          "time_in_force": "GTC",
+          "type": "LIMIT",
+          "side": "SELL",
+          "fills": []
+        },
+        {
+          "price": 31150.7,
+          "quantity": 0.15,
+          "order_id": 3,
+          "client_order_id": "h8i9j0k1-l2m3-n4o5-p6q7-r8s9t0u1v2w",
+          "transact_time": 1696446007000,
+          "orig_qty": 0.15,
+          "executed_qty": 0.0,
+          "status": "NEW",
+          "time_in_force": "GTC",
+          "type": "LIMIT",
+          "side": "SELL",
+          "fills": []
+        },
+        {
+          "price": 31300.1,
+          "quantity": 0.25,
+          "order_id": 4,
+          "client_order_id": "i9j0k1l2-m3n4-o5p6-q7r8-s9t0u1v2w3x",
+          "transact_time": 1696446008000,
+          "orig_qty": 0.25,
+          "executed_qty": 0.0,
+          "status": "NEW",
+          "time_in_force": "GTC",
+          "type": "LIMIT",
+          "side": "SELL",
+          "fills": []
+        },
+        {
+          "price": 31400.0,
+          "quantity": 0.3,
+          "order_id": 5,
+          "client_order_id": "j0k1l2m3-n4o5-p6q7-r8s9-t0u1v2w3x4y",
+          "transact_time": 1696446009000,
+          "orig_qty": 0.3,
+          "executed_qty": 0.0,
+          "status": "NEW",
+          "time_in_force": "GTC",
+          "type": "LIMIT",
+          "side": "SELL",
+          "fills": []
+        }
+      ],
+      "lastTradeId": 128,
+      "currentPrice": 0
+    }
+  ],
+  "balances": [
+    [
+      "e0c2b9a7-2f4d-4c9b-b72b-d0c5de93b248",
+      {
+        "USDC": { "available": 99996278.15, "locked": 268377.9999999999 },
+        "BTC": { "available": 1000000.67, "locked": 0 }
+      }
+    ],
+    [
+      "f5b6e2c4-4a9e-4d8e-8c4a-6d87b7b1a0d1",
+      {
+        "USDC": { "available": 1000000.0, "locked": 0 },
+        "BTC": { "available": 1000000.0, "locked": 0 }
+      }
+    ],
+    [
+      "a1c9d3b4-1f2e-4b5c-8d9e-6a7b1c2d3e4f",
+      {
+        "USDC": { "available": 102218.3, "locked": 101588.7 },
+        "BTC": { "available": 85884.0, "locked": 14049.0 }
+      }
+    ]
+  ]
+}
