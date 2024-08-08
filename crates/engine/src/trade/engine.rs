@@ -23,6 +23,7 @@ pub struct Engine {
     balances: Vec<Balances>,
 }
 
+// TODO: save the snapshot after an interval and set the user balance
 impl Engine {
     pub fn new() -> Engine {
         if let Ok(path) = env::var("SNAPSHOT_PATH") {
