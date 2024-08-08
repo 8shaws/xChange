@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
 use common::types::order::{Fill, Order, OrderSide};
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Orderbook {
     pub bids: Vec<Order>,
     pub asks: Vec<Order>,
