@@ -1,5 +1,5 @@
 {
-  "orderbook": [
+  "orderbooks": [
     {
       "base_asset": "BTC",
       "quote_asset": "USDC",
@@ -147,30 +147,30 @@
           "fills": []
         }
       ],
-      "lastTradeId": 128,
-      "currentPrice": 0
+      "last_trade_id": 128,
+      "current_price": 0
     }
   ],
   "balances": [
     [
       "e0c2b9a7-2f4d-4c9b-b72b-d0c5de93b248",
       {
-        "USDC": { "available": 99996278.15, "locked": 268377.9999999999 },
-        "BTC": { "available": 1000000.67, "locked": 0 }
+        "usdc": { "available": 99996278.15, "locked": 268377.9999999999 },
+        "btc": { "available": 1000000.67, "locked": 0 }
       }
     ],
     [
       "f5b6e2c4-4a9e-4d8e-8c4a-6d87b7b1a0d1",
       {
-        "USDC": { "available": 1000000.0, "locked": 0 },
-        "BTC": { "available": 1000000.0, "locked": 0 }
+        "usdc": { "available": 1000000.0, "locked": 0 },
+        "btc": { "available": 1000000.0, "locked": 0 }
       }
     ],
     [
       "a1c9d3b4-1f2e-4b5c-8d9e-6a7b1c2d3e4f",
       {
-        "USDC": { "available": 102218.3, "locked": 101588.7 },
-        "BTC": { "available": 85884.0, "locked": 14049.0 }
+        "usdc": { "available": 102218.3, "locked": 101588.7 },
+        "btc": { "available": 85884.0, "locked": 14049.0 }
       }
     ]
   ]
