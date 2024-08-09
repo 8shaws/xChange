@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
 use std::env;
+use std::fs;
+use tokio::time::{self, Duration};
 
 use super::orderbook::Orderbook;
-use crate::utils::load_snapshot;
+use crate::{types::SnapShot, utils::load_snapshot};
 use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -18,15 +20,15 @@ pub struct UserBalance {
 }
 pub type Balances = Vec<Vec<UserBalance>>;
 
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Engine {
     orderbooks: Vec<Orderbook>,
     balances: Vec<Balances>,
 }
 
-// TODO: save the snapshot after an interval and set the user balance
 impl Engine {
-    pub fn new() -> Engine {
-        if let Ok(path) = env::var("SNAPSHOT_PATH") {
+    pub async fn new() -> Engine {
+        let mut engine = if let Ok(path) = env::var("SNAPSHOT_PATH") {
             let snapshot = load_snapshot(path.as_str());
             match snapshot {
                 Ok(snapshot) => Engine {
@@ -47,6 +49,35 @@ impl Engine {
                 orderbooks: vec![Orderbook::new(&vec![], &vec![], "BTC", "USDT", 0.0, "0")],
                 balances: vec![Balances::new()],
             }
+        };
+
+        let mut engine_clone = engine.clone();
+        tokio::spawn(async move {
+            engine_clone.start_saving_snapshots().await;
+        });
+
+        engine
+    }
+
+    async fn save_snapshot(&self) {
+        let snap = SnapShot {
+            orderbooks: self.orderbooks.clone(),
+            balances: self.balances.clone(),
+        };
+
+        if let Ok(path) = env::var("SNAPSHOT_PATH") {
+            let snapshot = serde_json::to_string(&snap).unwrap();
+            fs::write(path, snapshot).unwrap();
+        } else {
+            println!("SNAPSHOT_PATH not set, snapshot not saved");
+        }
+    }
+
+    async fn start_saving_snapshots(&mut self) {
+        let mut interval = time::interval(Duration::from_secs(3));
+        loop {
+            interval.tick().await;
+            self.save_snapshot().await;
         }
     }
 }
