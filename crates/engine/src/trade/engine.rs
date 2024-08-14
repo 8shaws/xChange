@@ -1,9 +1,12 @@
+use common::types::order::Order;
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use tokio::time::{self, Duration};
 
 use super::orderbook::Orderbook;
+use crate::types::MessageType;
+use crate::types::Process;
 use crate::{types::SnapShot, utils::load_snapshot};
 use std::collections::HashMap;
 
@@ -11,6 +14,15 @@ use std::collections::HashMap;
 pub struct Bs {
     pub available: f64,
     pub locked: f64,
+}
+
+impl Bs {
+    fn get_available(&self) -> f64 {
+        self.available
+    }
+    fn get_locked(&self) -> f64 {
+        self.locked
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -38,7 +50,15 @@ impl Engine {
                 Err(e) => {
                     println!("Error loading snapshot: {}", e);
                     Engine {
-                        orderbooks: vec![Orderbook::new(&vec![], &vec![], "BTC", "USDT", 0.0, "0")],
+                        orderbooks: vec![Orderbook::new(
+                            &vec![],
+                            &vec![],
+                            "BTC",
+                            "USDT",
+                            0.0,
+                            "BTC_USDC",
+                            "0",
+                        )],
                         balances: vec![Balances::new()],
                     }
                 }
@@ -46,7 +66,15 @@ impl Engine {
         } else {
             println!("SNAPSHOT_PATH not set, using default snapshot");
             Engine {
-                orderbooks: vec![Orderbook::new(&vec![], &vec![], "BTC", "USDT", 0.0, "0")],
+                orderbooks: vec![Orderbook::new(
+                    &vec![],
+                    &vec![],
+                    "BTC",
+                    "USDT",
+                    0.0,
+                    "BTC_USDC",
+                    "0",
+                )],
                 balances: vec![Balances::new()],
             }
         };
@@ -57,6 +85,22 @@ impl Engine {
         });
 
         engine
+    }
+
+    fn process(process: &Process) {
+        match process.message.type_ {
+            MessageType::AddOrder => {}
+            MessageType::CancelOrder => {}
+            MessageType::UpdateOrder => {}
+            MessageType::ProcessOrder => {}
+        }
+    }
+
+    fn create_order(&self, order: &mut Order) {
+        let orderbook = self.orderbooks.iter().find(|ob| ob.symbol == order.symbol);
+        if orderbook.is_none() {
+            return;
+        }
     }
 
     async fn save_snapshot(&self) {
