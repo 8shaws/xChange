@@ -10,6 +10,7 @@ pub struct Orderbook {
     pub base_asset: String,
     pub quote_asset: String,
     pub current_price: f64,
+    pub symbol: String,
     pub last_trade_id: String,
 }
 
@@ -20,6 +21,7 @@ impl Orderbook {
         base_asset: &str,
         quote_asset: &str,
         current_price: f64,
+        symbol: &str,
         last_trade_id: &str,
     ) -> Orderbook {
         Orderbook {
@@ -29,6 +31,7 @@ impl Orderbook {
             quote_asset: quote_asset.to_string(),
             current_price,
             last_trade_id: last_trade_id.to_string(),
+            symbol: symbol.to_string(),
         }
     }
 
@@ -36,15 +39,8 @@ impl Orderbook {
         format!("{}_{}", self.base_asset, self.quote_asset)
     }
 
-    pub fn get_snapshot(&self) -> Orderbook {
-        Orderbook {
-            bids: self.bids.clone(),
-            asks: self.asks.clone(),
-            base_asset: self.base_asset.clone(),
-            quote_asset: self.quote_asset.clone(),
-            current_price: self.current_price,
-            last_trade_id: self.last_trade_id.clone(),
-        }
+    pub fn get_snapshot(&self) -> &Orderbook {
+        self
     }
 
     pub fn add_order(&mut self, order: &mut Order) {
