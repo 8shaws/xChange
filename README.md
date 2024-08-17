@@ -14,12 +14,16 @@ Features
 ## Project Structure
 The workspace is organized into multiple crates, each responsible for a specific aspect of the exchange:
 
-- xchange-core: Core functionality and shared components
-- xchange-auth: User authentication and authorization
-- xchange-orderbook: Order book management and matching engine
-- xchange-api: RESTful API for interacting with the exchange
-- xchange-ws: WebSocket server for real-time data
-- xchange-db: Database interactions and management
+- crates/core: Core functionality for handling kycs and docs
+- crates/engine: Order book management and matching engine
+- crates/api: RESTful API for interacting with the exchange
+- crates/notif_worker: Worker for handling notifications
+- crates/subscriber: Real-time market data streaming from engine
+- crates/market_maker: Market maker for providing liquidity
+- crates/db: Database interactions and management
+- crates/time_db: Time series database for storing historical market data
+- crates/monitor: Monitoring and alerting system
+- manifests: K8s Configuration files for the exchange
 
 ## Getting Started
 ### Prerequisites
