@@ -10,6 +10,7 @@ use std::time::{Duration, SystemTime};
 
 use db::fns::initialize_db_pool;
 mod auth;
+mod kafka;
 mod middlewares;
 mod redis;
 mod route;
